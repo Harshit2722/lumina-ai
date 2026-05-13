@@ -1,4 +1,4 @@
-# AI SaaS Platform
+# Lumina AI - SaaS Platform
 
 A MERN stack-based AI SaaS application with subscription billing, prompt history, and JWT authentication.
 
