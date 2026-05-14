@@ -1,5 +1,5 @@
 import { createContext, useState, useEffect,useContext } from 'react';
-import {getUserProfile} from "../api/axios"
+import {getUserProfile, logoutUser} from "../api/axios"
 import {toast} from "react-hot-toast";
 
 const AuthContext = createContext();
@@ -9,23 +9,16 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const checkAuth = async ()=>{
-      
-      // Check if token exists in local storage on load
-      const token = localStorage.getItem('token');
-
-      if(!token){
-        setLoading(false);
-        return;
-      }
-
+    const checkAuth = async () => {
       try{
         const {data} = await getUserProfile();
         setUser(data.data);
         }catch(error){
           console.error(error);
-          toast.error(error.response?.data?.message || "Failed to fetch profile")
-          localStorage.removeItem("token");
+          // Only show error toast if it's not a 401 (Unauthorized)
+          if (error.response?.status !== 401) {
+            toast.error(error.response?.data?.message || "Failed to fetch profile");
+          }
         }finally{
           setLoading(false);
         }
@@ -33,28 +26,10 @@ export const AuthProvider = ({ children }) => {
     checkAuth();
   }, []);
 
-  const login = function(userData,token){
-    localStorage.setItem("token",token);
-    localStorage.setItem("user",JSON.stringify(userData));
-    setUser(userData);
-  }
-  const register = function(userData,token){
-    localStorage.setItem("token",token);
-    localStorage.setItem("user",JSON.stringify(userData));
-    setUser(userData);
-  }
-
-  const logout = function(){
-    localStorage.removeItem("user")
-    localStorage.removeItem("token")
-    setUser(null)
-  }
-
   
 
-
   return (
-    <AuthContext.Provider value={{ user, register,login,logout, loading }}>
+    <AuthContext.Provider value={{ user,setUser, loading }}>
       {!loading && children}
     </AuthContext.Provider>
   );
