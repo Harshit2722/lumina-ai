@@ -85,14 +85,14 @@ const Login = () => {
       <div className="noise-overlay" />
 
       {/* Top Nav */}
-      <nav className="relative z-10 px-8 py-4">
+      <nav className="relative z-10 px-6 py-5">
         <div className="flex items-center">
           <span className="text-xl font-bold font-hanken tracking-tight">Lumina AI</span>
         </div>
       </nav>
 
       {/* Main Form Container */}
-      <main className="flex-grow flex items-center justify-center relative z-10 px-4 pb-8">
+      <main className="flex-grow flex items-center justify-center relative z-10 px-4 pb-32">
         <div className="w-full max-w-[440px] glass-panel rounded-[2rem] pt-7 pb-8 px-10 space-y-7 animate-in fade-in zoom-in duration-500">
           
           <div className="space-y-2 text-center">
@@ -175,11 +175,11 @@ const Login = () => {
       </main>
 
       {/* Fixed Footer */}
-      <footer className="relative z-10 px-8 py-6 flex justify-between items-center text-[10px] font-medium tracking-widest text-outline-variant/40 uppercase">
+      <footer className="absolute bottom-0 w-full z-10 px-6 pt-6 pb-4 flex justify-between items-center text-[10px] font-semibold tracking-widest text-white/50 uppercase">
         <p>© 2026 Lumina AI. Boundless Intelligence.</p>
-        <div className="flex gap-6">
-          <Link to="#" className="hover:text-on-surface transition-colors">Privacy</Link>
-          <Link to="#" className="hover:text-on-surface transition-colors">Terms</Link>
+        <div className="flex gap-10">
+          <Link to="#" className="text-white/70 hover:text-white transition-colors">Privacy</Link>
+          <Link to="#" className="text-white/70 hover:text-white transition-colors">Terms</Link>
         </div>
       </footer>
     </div>
