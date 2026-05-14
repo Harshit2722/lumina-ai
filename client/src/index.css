@@ -92,7 +92,7 @@
   }
 
   .input-field:focus {
-    @apply border-primary shadow-[0_4px_12px_-6px_rgba(231, 195, 101, 0.3)];
+    @apply border-primary shadow-[0_4px_12px_-6px_rgba(231,195,101,0.3)];
   }
 
   .btn-primary {
