@@ -45,18 +45,21 @@ const register = asyncHandler(async (req, res) => {
   // Generate token
   const token = generateToken(user._id);
 
-  res.status(201).json(
-    new ApiResponse(201, {
-      token,
-      user: {
-        id: createdUser._id,
-        name: createdUser.name,
-        email: createdUser.email,
-        credits: createdUser.credits,
-        plan: createdUser.plan
-      }
-    }, "User registered successfully")
-  );
+  res.cookie("token", token, {
+  httpOnly: true,  // Javascript cannot access this!
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "strict",
+  maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
+}).json(new ApiResponse(200,
+  { user: {
+    id: createdUser._id,
+    name: createdUser.name,
+    email: createdUser.email,
+    credits: createdUser.credits,
+    plan: createdUser.plan
+  }}, 
+  "Login successful"));
+
 });
 
 // @desc    Login a user
@@ -85,9 +88,13 @@ const login = asyncHandler(async (req, res) => {
   // Generate token
   const token = generateToken(user._id);
 
-  res.status(200).json(
+  res.cookie("token", token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    maxAge: 30 * 24 * 60 * 60 * 1000
+  }).json(
     new ApiResponse(200, {
-      token,
       user: {
         id: user._id,
         name: user.name,
@@ -108,4 +115,11 @@ const getUserProfile = asyncHandler(async (req,res)=>{
   )
 })
 
-module.exports = {getUserProfile,register,login}
+const logout = asyncHandler(async (req, res) => {
+  res.cookie("token", "", {
+    httpOnly: true,
+    expires: new Date(0),
+  }).json(new ApiResponse(200, {}, "User logged out successfully"));
+});
+
+module.exports = {getUserProfile,register,login,logout}

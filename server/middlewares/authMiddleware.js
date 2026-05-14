@@ -4,17 +4,12 @@ const { asyncHandler } = require('../utils/asyncHandler');
 const { ApiError } = require('../utils/ApiError');
 
 const authMiddleware = asyncHandler(async (req, res, next) => {
-  let token;
 
-  if (
-    req.headers.authorization &&
-    req.headers.authorization.startsWith('Bearer')
-  ) {
-    token = req.headers.authorization.split(' ')[1];
-  }
 
-  if (!token) {
-    throw new ApiError(401, 'Not authorized to access this route');
+  const token = req.cookies.token;
+
+  if(!token){
+    throw new ApiError(401,"You are not logged in");
   }
 
   try {
