@@ -34,8 +34,12 @@ const Login = () => {
       newErrors.email = "Invalid email address";
     }
 
+
     if (!formData.password) {
-      newErrors.password = "Password is required";
+      newErrors.password = "PassKey is required";
+    } 
+    else if (formData.password.length < 8) {
+      newErrors.password = "PassKey must be at least 8 characters";
     }
 
     setErrors(newErrors);
@@ -108,7 +112,7 @@ const Login = () => {
               </div>
               <div className="space-y-1">
                 <input
-                  type="email"
+                  type="text"
                   name="email"
                   value={formData.email}
                   onChange={handleChange}

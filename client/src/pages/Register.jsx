@@ -26,12 +26,14 @@ const Register = () => {
   const validate = () => {
     const newErrors = {};
     if (!formData.name) newErrors.name = "Full name is required";
+    else if (formData.name.length < 2) newErrors.name = "Name must be at least 2 characters";
     if (!formData.email) {
       newErrors.email = "Email is required";
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = "Invalid email address";
     }
     if (!formData.password) newErrors.password = "Password is required";
+    else if (formData.password.length < 8) newErrors.password = "Password must be at least 8 characters";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -116,7 +118,7 @@ const Register = () => {
               </div>
               <div className="space-y-1">
                 <input
-                  type="email"
+                  type="text"
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
