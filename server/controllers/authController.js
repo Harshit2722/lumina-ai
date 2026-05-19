@@ -4,6 +4,7 @@ const bcrypt = require('bcryptjs');
 const { asyncHandler } = require('../utils/asyncHandler');
 const { ApiError } = require('../utils/ApiError');
 const { ApiResponse } = require('../utils/ApiResponse');
+const sendEmail = require('../utils/sendEmail');
 
 // Generate JWT Token
 const generateToken = (id) => {
@@ -29,37 +30,108 @@ const register = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Email already exists");
   }
 
-  // Create user
+  // Generate 6-digit OTP
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  const otpExpire = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
   const user = await User.create({
     name,
     email,
-    password
+    password,
+    verifyOTP: otp,
+    verifyOTPExpire: otpExpire
   });
 
-  const createdUser = await User.findById(user._id);
+  // Send Email
+  try {
+    await sendEmail({
+      email: user.email,
+      type: 'VERIFY_EMAIL',
+      otp: otp
+    });
 
-  if (!createdUser) {
-    throw new ApiError(500, "Something went wrong while registering the user");
+    res.status(201).json(new ApiResponse(201, { email: user.email }, "Verification OTP sent to your email"));
+  } catch (error) {
+    user.verifyOTP = undefined;
+    user.verifyOTPExpire = undefined;
+    await user.save({ validateBeforeSave: false });
+    throw new ApiError(500, "Email could not be sent. Please try again later.");
+  }
+});
+
+// @desc    Verify Email
+// @route   POST /api/v1/auth/verify-email
+// @access  Public
+const verifyEmail = asyncHandler(async (req, res) => {
+  const { email, otp } = req.body;
+
+  if (!email || !otp) {
+    throw new ApiError(400, "Please provide email and OTP");
   }
 
-  // Generate token
+  const user = await User.findOne({ 
+    email, 
+    verifyOTP: otp,
+    verifyOTPExpire: { $gt: Date.now() }
+  });
+
+  if (!user) {
+    throw new ApiError(400, "Invalid or expired OTP");
+  }
+
+  // Update user status
+  user.isVerified = true;
+  user.verifyOTP = undefined;
+  user.verifyOTPExpire = undefined;
+  await user.save();
+
+  // Generate token and login after verification
   const token = generateToken(user._id);
 
   res.cookie("token", token, {
-  httpOnly: true,  // Javascript cannot access this!
-  secure: process.env.NODE_ENV === "production",
-  sameSite: "strict",
-  maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
-}).json(new ApiResponse(200,
-  { user: {
-    id: createdUser._id,
-    name: createdUser.name,
-    email: createdUser.email,
-    credits: createdUser.credits,
-    plan: createdUser.plan
-  }}, 
-  "Login successful"));
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    maxAge: 30 * 24 * 60 * 60 * 1000
+  }).json(new ApiResponse(200, {
+    user: {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      credits: user.credits,
+      plan: user.plan
+    }
+  }, "Email verified and logged in successfully"));
+});
 
+// @desc    Resend OTP
+// @route   POST /api/v1/auth/resend-otp
+// @access  Public
+const resendOTP = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+
+  const user = await User.findOne({ email });
+
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  if (user.isVerified) {
+    throw new ApiError(400, "User is already verified");
+  }
+
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  user.verifyOTP = otp;
+  user.verifyOTPExpire = new Date(Date.now() + 24 * 60 * 60 * 1000);
+  await user.save();
+
+  await sendEmail({
+    email: user.email,
+    type: 'RESEND_OTP',
+    otp: otp
+  });
+
+  res.status(200).json(new ApiResponse(200, {}, "New OTP sent successfully"));
 });
 
 // @desc    Login a user
@@ -79,7 +151,10 @@ const login = asyncHandler(async (req, res) => {
     throw new ApiError(401, "Invalid credentials");
   }
 
-  // Check password
+  if (!user.isVerified) {
+    throw new ApiError(403, "Account not verified. Please verify your email.");
+  }
+
   const isMatch = await user.matchPassword(password);
   if (!isMatch) {
     throw new ApiError(401, "Invalid credentials");
@@ -106,13 +181,9 @@ const login = asyncHandler(async (req, res) => {
   );
 });
 
-
 const getUserProfile = asyncHandler(async (req,res)=>{
   const user = await User.findById(req.user._id);
-
-  res.status(200).json(
-    new ApiResponse(200,user,"User fetched successfully")
-  )
+  res.status(200).json(new ApiResponse(200,user,"User fetched successfully"))
 })
 
 const logout = asyncHandler(async (req, res) => {
@@ -122,4 +193,4 @@ const logout = asyncHandler(async (req, res) => {
   }).json(new ApiResponse(200, {}, "User logged out successfully"));
 });
 
-module.exports = {getUserProfile,register,login,logout}
+module.exports = {getUserProfile,register,login,logout,verifyEmail,resendOTP}

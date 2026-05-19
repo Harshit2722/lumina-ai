@@ -4,8 +4,9 @@ const cors = require('cors');
 const morgan = require('morgan');
 const connectDB = require('./config/db');
 const authRoutes = require('./routes/authRoutes')
-const {errorMiddleware} = require('./middlewares/errorMiddleware');
 const cookieParser = require('cookie-parser');
+const passport = require('./config/passport');
+const {errorMiddleware} = require('./middlewares/errorMiddleware');
 
 // Connect to MongoDB
 connectDB();
@@ -15,6 +16,7 @@ const app = express();
 // Middleware
 app.use(express.json());
 app.use(cookieParser())
+app.use(passport.initialize());
 app.use(cors({ 
   origin: process.env.CLIENT_URL || 'http://localhost:5173',
   credentials: true 
